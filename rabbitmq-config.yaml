@@ -1,0 +1,31 @@
+exchanges:
+  - name: trainer-exchange
+    type: topic
+    durable: true
+  - name: inferer-exchange
+    type: topic
+    durable: true
+
+queues:
+  - name: trainer-request-queue
+    durable: true
+  - name: trainer-response-queue
+    durable: true
+  - name: inferer-request-queue
+    durable: true
+  - name: inferer-response-queue
+    durable: true
+
+bindings:
+  - exchange: trainer-exchange
+    queue: trainer-request-queue
+    routing_key: "trainer.request.*"
+  - exchange: trainer-exchange
+    queue: trainer-response-queue
+    routing_key: "trainer.response.*"
+  - exchange: inferer-exchange
+    queue: inferer-request-queue
+    routing_key: "inferer.request.*"
+  - exchange: inferer-exchange
+    queue: inferer-response-queue
+    routing_key: "inferer.response.*"
