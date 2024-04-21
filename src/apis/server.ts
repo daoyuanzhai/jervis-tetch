@@ -10,6 +10,9 @@ import { sendMessage } from "./rabbitMQService";
 import multer from 'multer';
 import dotenv from "dotenv";
 
+import fs from 'fs';
+import path from 'path';
+
 dotenv.config();
 const port: number = Number(process.env.EXPRESS_PORT);
 
@@ -54,28 +57,38 @@ app.post(
 );
 
 app.post('/upload', (req: Request, res: Response, next: NextFunction) => {
-  // Ensure field names are specified and are strings
   const app_id = req.query.app_id;
   const user_id = req.query.user_id;
   const conversation_id = req.query.conversation_id;
 
-  // Check if required text fields are received
-  if (!app_id || !user_id || !conversation_id) {
-    return res.status(400).send('Missing one or more required text fields: app_id, user_id, or conversation_id.');
+  if (typeof app_id !== 'string' || !app_id ||
+      typeof user_id !== 'string' || !user_id ||
+      typeof conversation_id !== 'string' || !conversation_id) {
+    return res.status(400).send('One or more required query parameters are missing or incorrect. Ensure that app_id, user_id, and conversation_id are provided and are strings.');
   }
 
-  const dynamicUpload = multer({
-    storage: multer.diskStorage({
-      destination: (req, file, cb) => cb(null, 'uploads/'),
-      filename: (req, file, cb) => cb(null, conversation_id + '-' + Date.now() + '.mp3')
-    })
-  }).single("file");
-
-  dynamicUpload(req, res, function (err) {
+  // Ensure the directory exists
+  const uploadPath = path.join(process.cwd(), 'uploads', app_id, user_id, conversation_id);
+  fs.mkdir(uploadPath, { recursive: true }, (err) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-    next();
+
+    // Configuration for Multer
+    const dynamicUpload = multer({
+      storage: multer.diskStorage({
+        destination: (req, file, cb) => cb(null, uploadPath),
+        filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
+      })
+    }).single("file");
+
+    // Use the multer instance to handle the file upload
+    dynamicUpload(req, res, function (err) {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      next();
+    });
   });
 }, (req: Request, res: Response) => {
   if (req.file) {
