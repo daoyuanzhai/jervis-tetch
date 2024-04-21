@@ -7,7 +7,9 @@ import { validate } from "class-validator";
 import { SendMessageRequest } from "../models/dto";
 import { sendMessage } from "./rabbitMQService";
 
+import multer from 'multer';
 import dotenv from "dotenv";
+
 dotenv.config();
 const port: number = Number(process.env.EXPRESS_PORT);
 
@@ -50,6 +52,42 @@ app.post(
     }
   }
 );
+
+app.post('/upload', (req: Request, res: Response, next: NextFunction) => {
+  // Ensure field names are specified and are strings
+  const app_id = req.query.app_id;
+  const user_id = req.query.user_id;
+  const conversation_id = req.query.conversation_id;
+
+  // Check if required text fields are received
+  if (!app_id || !user_id || !conversation_id) {
+    return res.status(400).send('Missing one or more required text fields: app_id, user_id, or conversation_id.');
+  }
+
+  const dynamicUpload = multer({
+    storage: multer.diskStorage({
+      destination: (req, file, cb) => cb(null, 'uploads/'),
+      filename: (req, file, cb) => cb(null, conversation_id + '-' + Date.now() + '.mp3')
+    })
+  }).single("file");
+
+  dynamicUpload(req, res, function (err) {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    next();
+  });
+}, (req: Request, res: Response) => {
+  if (req.file) {
+    res.json({
+      message: 'File uploaded successfully!',
+      filename: req.file.filename
+    });
+  } else {
+    res.status(400).send('No file uploaded.');
+  }
+});
+
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
