@@ -31,4 +31,4 @@ async function uploadFile(app_id, user_id, conversation_id, formData) {
   return filename;
 }
 
-export default uploadFile;
+export { uploadFile };

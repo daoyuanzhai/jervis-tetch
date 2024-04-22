@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import dotenv from "dotenv";
-import uploadFile from "./services/fileUploadService";
+import { uploadFile } from "./services/fileUploadService";
+import { sendMessage } from "./services/rabbitMQService";
 
 dotenv.config();
 // const port = process.env.HONO_PORT;
@@ -35,6 +36,12 @@ app.post("/submit", async (c) => {
       conversation_id,
       formData
     );
+    sendMessage("inferer-request-queue", {
+      app_id,
+      user_id,
+      conversation_id,
+      filename,
+    });
     return c.json({ status: "success", filename });
   } catch (error) {
     console.error(`Failed to write file: ${error}`);
