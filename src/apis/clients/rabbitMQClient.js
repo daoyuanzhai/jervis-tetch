@@ -43,7 +43,7 @@ class RabbitMQClient {
     try {
       await this.channel.assertQueue(queue, { durable: true });
       const bufferedMessage = Buffer.from(JSON.stringify(message));
-      this.channel.sendToQueue(queue, bufferedMessage);
+      this.channel.sendToQueue(queue, bufferedMessage, { persistent: true });
 
       let sanitizedMessage = { ...message };
       if (sanitizedMessage.text) {

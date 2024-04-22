@@ -1,3 +1,5 @@
+version: '3.8'  # Specifying the version of the Docker Compose file format
+
 services:
   rabbitmq:
     image: rabbitmq:management
@@ -11,5 +13,15 @@ services:
       RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE}
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+
+  app:  # Define your application service here
+    image: jervis-tetch:0.01  # Use the image you built
+    ports:
+      - "3000:3000"  # Assuming your app runs on port 3000
+    depends_on:
+      - rabbitmq  # Ensures RabbitMQ starts before your app
+    environment:
+      - RABBITMQ_HOST=my-rabbit  # Assuming your app expects this environment variable
+
 volumes:
   rabbitmq_data:
