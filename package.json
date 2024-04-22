@@ -2,11 +2,17 @@
   "name": "jervis-tetch",
   "module": "src/apis/index.js",
   "dependencies": {
+    "axios": "^1.6.8",
     "dotenv": "^16.4.5",
     "hono": "^4.2.5"
   },
   "type": "module",
   "scripts": {
-    "dev": "bun --watch src/apis/index.js"
+    "dev": "bun --watch src/apis/index.js",
+    "apply-rabbitmq": "bun src/scripts/applyRabbitMQConfig.js",
+    "rm-rabbitmq": "bun src/scripts/destroyRabbitMQConfig.js"
+  },
+  "devDependencies": {
+    "js-yaml": "^4.1.0"
   }
 }
