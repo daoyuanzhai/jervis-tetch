@@ -45,9 +45,13 @@ class RabbitMQClient {
       const bufferedMessage = Buffer.from(JSON.stringify(message));
       this.channel.sendToQueue(queue, bufferedMessage);
 
+      let sanitizedMessage = { ...message };
+      if (sanitizedMessage.text) {
+        sanitizedMessage.text = sanitizedMessage.text.substring(0, 10) + "***";
+      }
       console.log(
         `Message sent successfully to queue: ${queue}. Message:`,
-        message
+        sanitizedMessage
       );
     } catch (error) {
       console.error(`Failed to send message to ${queue}:`, error);

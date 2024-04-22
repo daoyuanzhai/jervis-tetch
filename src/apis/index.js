@@ -1,52 +1,80 @@
 import { Hono } from "hono";
-import dotenv from "dotenv";
 import { uploadFile } from "./services/fileUploadService";
 import { sendMessage } from "./services/rabbitMQService";
+import { jwtMiddleware, generateToken } from "./middlewares/auth";
+import { config } from "dotenv";
 
-dotenv.config();
-// const port = process.env.HONO_PORT;
+config();
+const RABBITMQ_USER = process.env.RABBITMQ_DEFAULT_USER;
+const RABBITMQ_PASSWORD = process.env.RABBITMQ_DEFAULT_PASS;
 
 const app = new Hono();
 
-app.post("/submit", async (c) => {
-  const app_id = c.req.query("app_id");
-  const user_id = c.req.query("user_id");
-  const conversation_id = c.req.query("conversation_id");
+async function handleSubmission(formData, c) {
+  const message = {
+    app_id: formData.get("app_id"),
+    user_id: formData.get("user_id"),
+    conversation_id: formData.get("conversation_id"),
+  };
 
-  if (!app_id || !user_id || !conversation_id) {
-    console.error("Error: Missing required query parameters");
+  if (!message.app_id || !message.user_id || !message.conversation_id) {
+    console.error("Error: Missing required form parameters");
     return c.json(
       {
         status: "error",
         message:
-          "One or more required query parameters are missing or incorrect. Ensure that app_id, user_id, and conversation_id are provided and are strings.",
+          "One or more required form parameters are missing or incorrect.",
       },
       400
     );
   }
-  console.log(
-    `Received submission with app_id: ${app_id}, user_id: ${user_id}, conversation_id: ${conversation_id}`
-  );
 
-  try {
-    const formData = await c.req.formData();
-    const filename = await uploadFile(
-      app_id,
-      user_id,
-      conversation_id,
-      formData
+  const file = formData.get("file");
+  const text = formData.get("text");
+  if (!file && !text) {
+    console.error("Error: Neither file nor text is provided in the request");
+    return c.json(
+      {
+        status: "error",
+        message: "Neither a file nor text is provided.",
+      },
+      400
     );
-    sendMessage("inferer-request-queue", {
-      app_id,
-      user_id,
-      conversation_id,
-      filename,
-    });
-    return c.json({ status: "success", filename });
-  } catch (error) {
-    console.error(`Failed to write file: ${error}`);
-    return c.json({ status: "error", message: error.message }, 500);
   }
+
+  if (file) {
+    try {
+      const filename = await uploadFile(
+        message.app_id,
+        message.user_id,
+        message.conversation_id,
+        file
+      );
+      message.filename = filename;
+    } catch (error) {
+      console.error(`Failed to upload file: ${error}`);
+      return c.json({ status: "error", message: error.message }, 500);
+    }
+  } else {
+    message.text = text;
+  }
+
+  sendMessage("inferer-request-queue", message);
+  return c.json({ status: "success", sent: message });
+}
+
+app.post("/submit", jwtMiddleware, async (c) => {
+  const formData = await c.req.formData();
+  return await handleSubmission(formData, c);
+});
+
+app.post("/token", async (c) => {
+  const { username, password } = await c.req.json();
+  if (username === RABBITMQ_USER && password === RABBITMQ_PASSWORD) {
+    const token = generateToken({ username });
+    return c.json({ token });
+  }
+  return c.json({ status: "error", message: "invalid credential" }, 401);
 });
 
 export default app;

@@ -5,7 +5,8 @@
     "amqplib": "^0.10.4",
     "axios": "^1.6.8",
     "dotenv": "^16.4.5",
-    "hono": "^4.2.5"
+    "hono": "^4.2.5",
+    "jsonwebtoken": "^9.0.2"
   },
   "type": "module",
   "scripts": {

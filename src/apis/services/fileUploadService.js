@@ -2,7 +2,7 @@ import { existsSync, mkdirSync } from "fs";
 import { writeFile } from "fs/promises";
 import { join } from "path";
 
-async function uploadFile(app_id, user_id, conversation_id, formData) {
+async function uploadFile(app_id, user_id, conversation_id, file) {
   const uploadPath = join(
     process.cwd(),
     "uploads",
@@ -13,12 +13,6 @@ async function uploadFile(app_id, user_id, conversation_id, formData) {
   if (!existsSync(uploadPath)) {
     console.log(`Creating new directory at ${uploadPath}`);
     mkdirSync(uploadPath, { recursive: true });
-  }
-
-  const file = formData.get("file");
-  if (!file) {
-    console.error("Error: No file is provided in the request");
-    return { status: "error", message: "No file uploaded." };
   }
 
   const filename = Date.now() + "-" + file.name;
