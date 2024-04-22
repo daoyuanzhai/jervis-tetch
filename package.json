@@ -1,36 +1,9 @@
 {
   "name": "jervis-tetch",
-  "version": "1.0.0",
-  "description": "The manager of rabbitmq",
-  "main": "index.js",
-  "scripts": {
-    "apply-rabbitmq-config": "ts-node src/scripts/applyRabbitMQConfig.ts",
-    "destroy-rabbitmq-config": "ts-node src/scripts/destroyRabbitMQConfig.ts",
-    "dev": "ts-node src/apis/server.ts",
-    "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "module": "src/apis/index.js",
   "dependencies": {
-    "amqplib": "^0.10.3",
-    "axios": "^1.6.8",
-    "class-transformer": "^0.5.1",
-    "class-validator": "^0.14.1",
     "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "multer": "^1.4.5-lts.1",
-    "reflect-metadata": "^0.2.2"
+    "hono": "^4.2.5"
   },
-  "devDependencies": {
-    "@types/amqplib": "^0.10.5",
-    "@types/express": "^4.17.21",
-    "@types/js-yaml": "^4.0.9",
-    "@types/multer": "^1.4.11",
-    "@types/node": "^20.12.2",
-    "js-yaml": "^4.1.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.4.3"
-  }
+  "type": "module"
 }
