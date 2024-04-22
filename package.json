@@ -5,5 +5,8 @@
     "dotenv": "^16.4.5",
     "hono": "^4.2.5"
   },
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/apis/index.js"
+  }
 }

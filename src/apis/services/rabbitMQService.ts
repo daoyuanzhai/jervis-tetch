@@ -1,6 +1,6 @@
 import { MessageContent } from "../models/dto";
-import rabbitMQClient from "./rabbitMQClient";
-import { sanitize } from "./sanitizer";
+import rabbitMQClient from "../clients/rabbitMQClient";
+import { sanitize } from "../sanitizer";
 
 export async function sendMessage(
   queue: string,

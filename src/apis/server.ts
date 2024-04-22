@@ -5,7 +5,7 @@ import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 
 import { SendMessageRequest } from "../models/dto";
-import { sendMessage } from "./rabbitMQService";
+import { sendMessage } from "./services/rabbitMQService";
 
 import multer from 'multer';
 import dotenv from "dotenv";
