@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { uploadFile } from "./services/fileUploadService";
 import { sendMessage } from "./services/rabbitMQService";
+import { setContext } from "./services/lagoService";
 import { jwtMiddleware, generateToken } from "./middlewares/auth";
 import { config } from "dotenv";
 
@@ -12,12 +13,12 @@ const app = new Hono();
 
 async function handleSubmission(formData, c) {
   const message = {
-    app_id: formData.get("app_id"),
-    user_id: formData.get("user_id"),
-    conversation_id: formData.get("conversation_id"),
+    appId: formData.get("appId"),
+    userId: formData.get("userId"),
+    conversationId: formData.get("conversationId"),
   };
 
-  if (!message.app_id || !message.user_id || !message.conversation_id) {
+  if (!message.appId || !message.userId || !message.conversationId) {
     console.error("Error: Missing required form parameters");
     return c.json(
       {
@@ -45,9 +46,9 @@ async function handleSubmission(formData, c) {
   if (file) {
     try {
       const filename = await uploadFile(
-        message.app_id,
-        message.user_id,
-        message.conversation_id,
+        message.appId,
+        message.userId,
+        message.conversationId,
         file
       );
       message.filename = filename;
@@ -75,6 +76,28 @@ app.post("/token", async (c) => {
     return c.json({ token });
   }
   return c.json({ status: "error", message: "invalid credential" }, 401);
+});
+
+app.post("/chat/context", jwtMiddleware, async (c) => {
+  const jsonData = await c.req.json();
+
+  try {
+    const conversationId = await setContext(
+      jsonData.appId,
+      jsonData.userId,
+      jsonData.conversationId,
+      jsonData.systemContext
+    );
+    return c.json({ status: "success", conversationId });
+  } catch (error) {
+    return c.json(
+      {
+        status: "error",
+        message: "Failed to set context: " + error.message,
+      },
+      500
+    );
+  }
 });
 
 export default app;
