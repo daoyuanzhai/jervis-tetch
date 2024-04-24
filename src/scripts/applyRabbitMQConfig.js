@@ -5,7 +5,8 @@ import yaml from "js-yaml";
 import dotenv from "dotenv";
 
 dotenv.config();
-const RABBITMQ_API = process.env.RABBITMQ_URL;
+
+const RABBITMQ_HOST = process.env.RABBITMQ_HOST;
 const RABBITMQ_USER = process.env.RABBITMQ_DEFAULT_USER;
 const RABBITMQ_PASSWORD = process.env.RABBITMQ_DEFAULT_PASS;
 
@@ -23,7 +24,7 @@ async function applyConfiguration() {
     // Apply Exchanges
     for (const exchange of config.exchanges) {
       await axios.put(
-        `${RABBITMQ_API}/exchanges/%2F/${exchange.name}`,
+        `http://${RABBITMQ_HOST}:15672/api/exchanges/%2F/${exchange.name}`,
         {
           type: exchange.type,
           durable: exchange.durable,
@@ -37,7 +38,7 @@ async function applyConfiguration() {
     // Apply Queues
     for (const queue of config.queues) {
       await axios.put(
-        `${RABBITMQ_API}/queues/%2F/${queue.name}`,
+        `http://${RABBITMQ_HOST}:15672/api/queues/%2F/${queue.name}`,
         {
           durable: queue.durable,
           arguments: queue.arguments || {},
@@ -49,7 +50,7 @@ async function applyConfiguration() {
     // Apply Bindings
     for (const binding of config.bindings) {
       await axios.post(
-        `${RABBITMQ_API}/bindings/%2F/e/${binding.exchange}/q/${binding.queue}`,
+        `http://${RABBITMQ_HOST}:15672/api/bindings/%2F/e/${binding.exchange}/q/${binding.queue}`,
         {
           routing_key: binding.routing_key,
           arguments: binding.arguments || {},

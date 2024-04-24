@@ -2,12 +2,12 @@ import axios from "axios";
 import dotenv from "dotenv";
 dotenv.config();
 
-const RABBITMQ_API = process.env.RABBITMQ_URL;
+const RABBITMQ_HOST = process.env.RABBITMQ_HOST;
 const RABBITMQ_USER = process.env.RABBITMQ_DEFAULT_USER;
 const RABBITMQ_PASSWORD = process.env.RABBITMQ_DEFAULT_PASS;
 
 const axiosInstance = axios.create({
-  baseURL: RABBITMQ_API,
+  baseURL: `http://${RABBITMQ_HOST}:15672/api`,
   auth: {
     username: RABBITMQ_USER,
     password: RABBITMQ_PASSWORD,
