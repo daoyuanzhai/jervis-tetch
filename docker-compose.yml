@@ -66,6 +66,7 @@ services:
       - mysql
     volumes:
       - ./volumes/lago_data:/app/cache
+      - shared_volume_lago_jervis:/app/uploads
     environment:
       - RABBITMQ_HOST=rabbit-hostname
       - QDRANT_HOST=http://qdrant-hostname:6333
@@ -74,6 +75,9 @@ services:
       - LAGO_MYSQL_DB=${LAGO_MYSQL_DB}
       - LAGO_MYSQL_USERNAME=${LAGO_MYSQL_USERNAME}
       - LAGO_MYSQL_PASSWORD=${LAGO_MYSQL_PASSWORD}
+      - LAGO_RABBITMQ_HOST=${LAGO_RABBITMQ_HOST}
+      - LAGO_RABBITMQ_USER=${LAGO_RABBITMQ_USER}
+      - LAGO_RABBITMQ_PASS=${LAGO_RABBITMQ_PASS}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
 
   jervis:
@@ -91,7 +95,12 @@ services:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
       - SECRET_KEY=${SECRET_KEY}
+    volumes:
+      - ./volumes/jervis_data:/usr/src/app/uploads_local
+      - shared_volume_lago_jervis:/usr/src/app/uploads
 configs:
   qdrant_config:
     content: |
       log_level: INFO
+volumes:
+  shared_volume_lago_jervis:
