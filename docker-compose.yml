@@ -58,6 +58,8 @@ services:
     hostname: lago-hostname
     ports:
       - 8088:8088
+    expose:
+      - 8088
     depends_on:
       - rabbitmq
       - qdrant
@@ -80,13 +82,15 @@ services:
     container_name: jervis
     hostname: jervis-hostname
     ports:
-      - "3000:3000"
+      - 3000:3000
     depends_on:
       - lago
     environment:
-      - LAGO_BASE_URL=lago-hostname:8081
+      - LAGO_BASE_URL=http://lago-hostname:8088
       - RABBITMQ_HOST=rabbit-hostname
-
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+      - SECRET_KEY=${SECRET_KEY}
 configs:
   qdrant_config:
     content: |
