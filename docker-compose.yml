@@ -5,14 +5,14 @@ services:
     container_name: rabbitmq
     hostname: rabbit-hostname
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - 5672:5672
+      - 15672:15672
     volumes:
       - ./volumes/rabbitmq_data:/var/lib/rabbitmq
     environment:
-      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE}
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+      - RABBITMQ_ERLANG_COOKIE=${RABBITMQ_ERLANG_COOKIE}
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
 
   qdrant:
     image: qdrant/qdrant:latest
@@ -30,7 +30,11 @@ services:
       - source: qdrant_config
         target: /qdrant/config/production.yaml
     volumes:
-      - ./volumes/qdrant_data:/qdrant_data
+      - ./volumes/qdrant_data/storage:/qdrant/storage
+      - ./volumes/qdrant_data/snapshots:/qdrant/snapshots
+      - ./volumes/qdrant_data/config:/qdrant/config
+    environment:
+      - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY}
 
   mysql:
     image: mysql:8.3.0
@@ -38,23 +42,50 @@ services:
     container_name: mysql
     hostname: mysql-hostname
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
     volumes:
       - ./volumes/mysql_data:/var/lib/mysql
     ports:
-      - "3306:3306"
+      - 3306:3306
 
-  jervis:  # Define your application service here
-    image: jervis-tetch:0.01  # Use the image you built
+  lago:
+    image: lago:0.01
+    restart: always
+    container_name: lago
+    hostname: lago-hostname
     ports:
-      - "3000:3000"  # Assuming your app runs on port 3000
+      - 8088:8088
     depends_on:
-      - rabbitmq  # Ensures RabbitMQ starts before your app
+      - rabbitmq
+      - qdrant
+      - mysql
+    volumes:
+      - ./volumes/lago_data:/app/cache
     environment:
-      - RABBITMQ_HOST=my-rabbit  # Assuming your app expects this environment variable
+      - RABBITMQ_HOST=rabbit-hostname
+      - QDRANT_HOST=http://qdrant-hostname:6333
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
+      - LAGO_MYSQL_HOST=mysql-hostname
+      - LAGO_MYSQL_DB=${LAGO_MYSQL_DB}
+      - LAGO_MYSQL_USERNAME=${LAGO_MYSQL_USERNAME}
+      - LAGO_MYSQL_PASSWORD=${LAGO_MYSQL_PASSWORD}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+
+  jervis:
+    image: jervis-tetch:0.01
+    restart: always
+    container_name: jervis
+    hostname: jervis-hostname
+    ports:
+      - "3000:3000"
+    depends_on:
+      - lago
+    environment:
+      - LAGO_BASE_URL=lago-hostname:8081
+      - RABBITMQ_HOST=rabbit-hostname
 
 configs:
   qdrant_config:
