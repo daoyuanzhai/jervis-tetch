@@ -1,95 +1,31 @@
 import { Hono } from "hono";
-import { uploadFile } from "./services/fileUploadService";
+import { readFile } from "fs/promises";
+import { uploadFileAndPrepMessage } from "./services/submissionService";
 import { sendMessage } from "./services/rabbitMQService";
 import { setContext } from "./services/lagoService";
 import { jwtMiddleware, generateToken } from "./middlewares/auth";
-import { config } from "dotenv";
-
-config();
-const RABBITMQ_USER = process.env.RABBITMQ_DEFAULT_USER;
-const RABBITMQ_PASSWORD = process.env.RABBITMQ_DEFAULT_PASS;
+import { hashPassword } from "./utils/utils";
 
 const app = new Hono();
 
-async function handleSubmission(formData, c) {
-  const message = {
-    app_id: formData.get("appId"),
-    user_id: formData.get("userId"),
-    conversation_id: formData.get("conversationId"),
-  };
-
-  if (!message.app_id || !message.user_id || !message.conversation_id) {
-    console.error("Error: Missing required form parameters");
-    return c.json(
-      {
-        status: "error",
-        message:
-          "One or more required form parameters are missing or incorrect.",
-      },
-      400
-    );
-  }
-
-  const file = formData.get("file");
-  const text = formData.get("text");
-  if (!file && !text) {
-    console.error("Error: Neither file nor text is provided in the request");
-    return c.json(
-      {
-        status: "error",
-        message: "Neither a file nor text is provided.",
-      },
-      400
-    );
-  }
-
-  if (file) {
-    // Check if the file is an audio file
-    const fileType = file.type;
-    const allowedTypes = ["audio/mpeg", "audio/wav", "audio/mp4", "audio/ogg"];
-    if (!allowedTypes.includes(fileType)) {
-      console.error(`Unsupported file type: ${fileType}`);
-      return c.json(
-        {
-          status: "error",
-          message: "Unsupported file type. Only audio files are accepted.",
-        },
-        400
-      );
-    }
-
-    try {
-      const filename = await uploadFile(
-        message.app_id,
-        message.user_id,
-        message.conversation_id,
-        file
-      );
-      message.filename = filename;
-    } catch (error) {
-      console.error(`Failed to upload file: ${error}`);
-      return c.json({ status: "error", message: error.message }, 500);
-    }
-  } else {
-    message.text = text;
-  }
-
-  sendMessage("inferer-request-queue", message);
-  return c.json({ status: "success", sent: message });
-}
-
-app.post("/submit", jwtMiddleware, async (c) => {
-  const formData = await c.req.formData();
-  return await handleSubmission(formData, c);
-});
-
 app.post("/token", async (c) => {
   const { username, password } = await c.req.json();
-  if (username === RABBITMQ_USER && password === RABBITMQ_PASSWORD) {
-    const token = generateToken({ username });
-    return c.json({ token });
+  try {
+    const data = await readFile("credentials.json", "utf8");
+    const users = JSON.parse(data);
+
+    const user = users.find((user) => user.username === username);
+
+    if (user && user.password === hashPassword(password)) {
+      const token = generateToken({ username });
+      return c.json({ token });
+    } else {
+      return c.json({ status: "error", message: "invalid credentials" }, 401);
+    }
+  } catch (error) {
+    console.error("Error reading from credentials.json:", error);
+    return c.json({ status: "error", message: "server error" }, 500);
   }
-  return c.json({ status: "error", message: "invalid credential" }, 401);
 });
 
 app.post("/chat/context", jwtMiddleware, async (c) => {
@@ -103,6 +39,23 @@ app.post("/chat/context", jwtMiddleware, async (c) => {
       jsonData.systemContext
     );
     return c.json({ status: "success", conversationId });
+  } catch (error) {
+    return c.json(
+      {
+        status: "error",
+        message: "Failed to set context: " + error.message,
+      },
+      500
+    );
+  }
+});
+
+app.post("/submit", jwtMiddleware, async (c) => {
+  try {
+    const formData = await c.req.formData();
+    const message = await uploadFileAndPrepMessage(formData);
+    sendMessage("inferer-request-queue", message);
+    return c.json({ status: "success", sent: message });
   } catch (error) {
     return c.json(
       {

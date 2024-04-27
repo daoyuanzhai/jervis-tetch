@@ -12,7 +12,8 @@
   "scripts": {
     "dev": "bun --watch src/apis/index.js",
     "apply-rabbitmq": "bun src/scripts/applyRabbitMQConfig.js",
-    "rm-rabbitmq": "bun src/scripts/destroyRabbitMQConfig.js"
+    "rm-rabbitmq": "bun src/scripts/destroyRabbitMQConfig.js",
+    "create-power-users": "bun src/scripts/createPowerUserList.js"
   },
   "devDependencies": {
     "js-yaml": "^4.1.0"
