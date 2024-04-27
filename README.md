@@ -45,3 +45,5 @@ Once RabbitMQ is up and running:
 - Run `bun run create-power-users` to create the `credentials.json` file.
 - Remember to undo the changes in `createPowerUserList.js` to avoid giving away the credentials into git.
 - Build the image `docker build -t jervis-tetch:0.01 .`
+### Mysql and Qdrant
+See Lago README.md
