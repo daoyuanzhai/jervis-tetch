@@ -44,6 +44,20 @@ async function handleSubmission(formData, c) {
   }
 
   if (file) {
+    // Check if the file is an audio file
+    const fileType = file.type;
+    const allowedTypes = ["audio/mpeg", "audio/wav", "audio/mp4", "audio/ogg"];
+    if (!allowedTypes.includes(fileType)) {
+      console.error(`Unsupported file type: ${fileType}`);
+      return c.json(
+        {
+          status: "error",
+          message: "Unsupported file type. Only audio files are accepted.",
+        },
+        400
+      );
+    }
+
     try {
       const filename = await uploadFile(
         message.appId,
