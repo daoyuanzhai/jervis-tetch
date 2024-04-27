@@ -13,12 +13,12 @@ const app = new Hono();
 
 async function handleSubmission(formData, c) {
   const message = {
-    appId: formData.get("appId"),
-    userId: formData.get("userId"),
-    conversationId: formData.get("conversationId"),
+    app_id: formData.get("appId"),
+    user_id: formData.get("userId"),
+    conversation_id: formData.get("conversationId"),
   };
 
-  if (!message.appId || !message.userId || !message.conversationId) {
+  if (!message.app_id || !message.user_id || !message.conversation_id) {
     console.error("Error: Missing required form parameters");
     return c.json(
       {
@@ -60,9 +60,9 @@ async function handleSubmission(formData, c) {
 
     try {
       const filename = await uploadFile(
-        message.appId,
-        message.userId,
-        message.conversationId,
+        message.app_id,
+        message.user_id,
+        message.conversation_id,
         file
       );
       message.filename = filename;
