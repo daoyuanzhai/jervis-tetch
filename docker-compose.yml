@@ -74,6 +74,7 @@ services:
       - ./volumes/lago_data:/app/cache
       - shared_volume_lago_jervis:/app/uploads
     environment:
+      - RUNNING_ENV=docker-compose
       - QDRANT_HOST=http://qdrant:6333
       - QDRANT_API_KEY=${QDRANT_API_KEY}
       - LAGO_MYSQL_HOST=mysql
