@@ -46,4 +46,4 @@ Once RabbitMQ is up and running:
 - Remember to undo the changes in `createPowerUserList.js` to avoid giving away the credentials into git.
 - Build the image `docker build -t jervis-tetch:0.01 .`
 ### Mysql and Qdrant
-See Lago README.md
+See Lago [README.md](https://github.com/daoyuanzhai/lago/blob/main/README.md)
