@@ -22,13 +22,11 @@ services:
     ports:
       - 6333:6333
       - 6334:6334
-    configs:
-      - source: qdrant_config
-        target: /qdrant/config/production.yaml
     volumes:
       - ./volumes/qdrant_data/storage:/qdrant/storage
       - ./volumes/qdrant_data/snapshots:/qdrant/snapshots
       - ./volumes/qdrant_data/config:/qdrant/config
+      - ./qdrant_config.yaml:/qdrant/config/production.yaml
     environment:
       - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY}
 
@@ -104,9 +102,5 @@ services:
       - SECRET_KEY=${SECRET_KEY}
     volumes:
       - shared_volume_lago_jervis:/usr/src/app/uploads
-configs:
-  qdrant_config:
-    content: |
-      log_level: INFO
 volumes:
   shared_volume_lago_jervis:
