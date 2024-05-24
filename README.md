@@ -13,7 +13,7 @@ RABBITMQ_ERLANG_COOKIE=some_cookie_value
 RABBITMQ_DEFAULT_USER=admin_username_to_login_webui
 RABBITMQ_DEFAULT_PASS=admin_password_to_login_webui
 
-QDRANT_API_KEY=your_qdrant_sky_key
+QDRANT_API_KEY=your_qdrant_api_key
 
 OPENAI_API_KEY=your_openai_api_key
 
