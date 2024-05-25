@@ -72,9 +72,9 @@ services:
       - ./volumes/lago_data:/app/cache
       - shared_volume_lago_jervis:/app/uploads
     environment:
-      - RUNNING_ENV=dev
-      - USING_PROXY=true
-      - PROXY_URL=socks5://172.16.1.2
+      - RUNNING_ENV=${RUNNING_ENV}
+      - USING_PROXY=${USING_PROXY}
+      - PROXY_URL=${PROXY_URL}
       - QDRANT_HOST=http://qdrant:6333
       - QDRANT_API_KEY=${QDRANT_API_KEY}
       - LAGO_MYSQL_HOST=mysql

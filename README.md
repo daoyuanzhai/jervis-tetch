@@ -9,6 +9,7 @@ MYSQL_USER=<admin_username_you_would_like_for_your_mysql>
 MYSQL_PASSWORD=<admin_password_you_would_like_for_your_mysql>
 
 RABBITMQ_HOST=localhost
+RABBITMQ_PORT=15672
 RABBITMQ_ERLANG_COOKIE=<some_cookie_value>
 RABBITMQ_DEFAULT_USER=<admin_username_to_login_webui>
 RABBITMQ_DEFAULT_PASS=<admin_password_to_login_webui>
