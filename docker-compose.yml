@@ -1,4 +1,29 @@
 services:
+  mysql:
+    image: mysql:8.3.0
+    restart: always
+    container_name: mysql
+    hostname: mysql-hostname
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    volumes:
+      - ./volumes/mysql_data:/var/lib/mysql
+    ports:
+      - 3306:3306
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    hostname: redis-hostname
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./volumes/redis_data:/data
+
   rabbitmq:
     image: rabbitmq:management
     restart: always
@@ -13,6 +38,9 @@ services:
       - RABBITMQ_ERLANG_COOKIE=${RABBITMQ_ERLANG_COOKIE}
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+    depends_on:
+      - redis
+      - mysql
 
   qdrant:
     image: qdrant/qdrant:latest
@@ -30,21 +58,6 @@ services:
     environment:
       - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY}
 
-  mysql:
-    image: mysql:8.3.0
-    restart: always
-    container_name: mysql
-    hostname: mysql-hostname
-    environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-    volumes:
-      - ./volumes/mysql_data:/var/lib/mysql
-    ports:
-      - 3306:3306
-
   whisper:
     image: onerahmet/openai-whisper-asr-webservice:latest
     restart: always
@@ -56,56 +69,75 @@ services:
     ports:
       - 9000:9000
 
-  lago:
-    image: lago:0.01
+  celery:
+    image: lago-celery:0.01
     restart: always
-    container_name: lago
-    hostname: lago-hostname
-    ports:
-      - 8088:8088
+    container_name: celery
+    hostname: celery-hostname
+    environment:
+      - LAGO_RABBITMQ_HOST=rabbitmq
+      - LAGO_RABBITMQ_PORT=5672
+      - LAGO_RABBITMQ_USER=${RABBITMQ_DEFAULT_USER}
+      - LAGO_RABBITMQ_PASS=${RABBITMQ_DEFAULT_PASS}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+    volumes:
+      # - ./api:/app:ro # Bind mount the source code directory (read-only)
+      - ./volumes/celery_logs:/var/log/celery # Volume for logs
     depends_on:
       - rabbitmq
-      - qdrant
-      - mysql
-      - whisper
-    volumes:
-      - ./volumes/lago_data:/app/cache
-      - shared_volume_lago_jervis:/app/uploads
-    environment:
-      - RUNNING_ENV=${RUNNING_ENV}
-      - USING_PROXY=${USING_PROXY}
-      - PROXY_URL=${PROXY_URL}
-      - QDRANT_HOST=http://qdrant:6333
-      - QDRANT_API_KEY=${QDRANT_API_KEY}
-      - LAGO_MYSQL_HOST=mysql
-      - LAGO_MYSQL_DB=${LAGO_MYSQL_DB}
-      - LAGO_MYSQL_USERNAME=${LAGO_MYSQL_USERNAME}
-      - LAGO_MYSQL_PASSWORD=${LAGO_MYSQL_PASSWORD}
-      - LAGO_RABBITMQ_HOST=rabbitmq
-      - LAGO_RABBITMQ_USER=${LAGO_RABBITMQ_USER}
-      - LAGO_RABBITMQ_PASS=${LAGO_RABBITMQ_PASS}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2}
-      - LANGCHAIN_ENDPOINT=${LANGCHAIN_ENDPOINT}
-      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
-      - WHISPER_HOST=whisper
+      - redis
+#   lago:
+#     image: lago:0.01
+#     restart: always
+#     container_name: lago
+#     hostname: lago-hostname
+#     ports:
+#       - 8088:8088
+#     depends_on:
+#       - rabbitmq
+#       - qdrant
+#       - mysql
+#       - whisper
+#     volumes:
+#       - ./volumes/lago_data:/app/cache
+#       - shared_volume_lago_jervis:/app/uploads
+#     environment:
+#       - RUNNING_ENV=${RUNNING_ENV}
+#       - USING_PROXY=${USING_PROXY}
+#       - PROXY_URL=${PROXY_URL}
+#       - QDRANT_HOST=http://qdrant:6333
+#       - QDRANT_API_KEY=${QDRANT_API_KEY}
+#       - LAGO_MYSQL_HOST=mysql
+#       - LAGO_MYSQL_DB=${LAGO_MYSQL_DB}
+#       - LAGO_MYSQL_USERNAME=${LAGO_MYSQL_USERNAME}
+#       - LAGO_MYSQL_PASSWORD=${LAGO_MYSQL_PASSWORD}
+#       - LAGO_RABBITMQ_HOST=rabbitmq
+#       - LAGO_RABBITMQ_USER=${LAGO_RABBITMQ_USER}
+#       - LAGO_RABBITMQ_PASS=${LAGO_RABBITMQ_PASS}
+#       - OPENAI_API_KEY=${OPENAI_API_KEY}
+#       - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2}
+#       - LANGCHAIN_ENDPOINT=${LANGCHAIN_ENDPOINT}
+#       - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
+#       - WHISPER_HOST=whisper
 
-  jervis:
-    image: jervis-tetch:0.01
-    restart: always
-    container_name: jervis
-    hostname: jervis-hostname
-    ports:
-      - 3000:3000
-    depends_on:
-      - lago
-    environment:
-      - LAGO_BASE_URL=http://lago:8088
-      - RABBITMQ_HOST=rabbitmq
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
-      - SECRET_KEY=${SECRET_KEY}
-    volumes:
-      - shared_volume_lago_jervis:/usr/src/app/uploads
-volumes:
-  shared_volume_lago_jervis:
+#   jervis:
+#     image: jervis-tetch:0.01
+#     restart: always
+#     container_name: jervis
+#     hostname: jervis-hostname
+#     ports:
+#       - 3000:3000
+#     depends_on:
+#       - lago
+#     environment:
+#       - LAGO_BASE_URL=http://lago:8088
+#       - RABBITMQ_HOST=rabbitmq
+#       - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+#       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+#       - SECRET_KEY=${SECRET_KEY}
+#     volumes:
+#       - shared_volume_lago_jervis:/usr/src/app/uploads
+# volumes:
+#   shared_volume_lago_jervis:

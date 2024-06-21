@@ -6,7 +6,9 @@
     "axios": "^1.6.8",
     "dotenv": "^16.4.5",
     "hono": "^4.2.5",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.10.1",
+    "uuid": "^10.0.0"
   },
   "type": "module",
   "scripts": {

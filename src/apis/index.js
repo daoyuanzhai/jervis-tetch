@@ -2,9 +2,11 @@ import { Hono } from "hono";
 import { readFile } from "fs/promises";
 import { uploadFileAndPrepMessage } from "./services/submissionService";
 import { sendMessage } from "./services/rabbitMQService";
-import { setContext } from "./services/lagoService";
+// import { setContext } from "./services/lagoService";
+import { setContext } from "./services/contextService";
 import { jwtMiddleware, generateToken } from "./middlewares/auth";
 import { hashPassword } from "./utils/utils";
+import { sendCeleryMessage } from "./services/celeryService";
 
 const app = new Hono();
 
@@ -30,16 +32,18 @@ app.post("/token", async (c) => {
 
 app.post("/chat/context", jwtMiddleware, async (c) => {
   const jsonData = await c.req.json();
+  const { appId, userId, conversationId, systemContext } = jsonData;
 
   try {
-    const conversationId = await setContext(
-      jsonData.appId,
-      jsonData.userId,
-      jsonData.conversationId,
-      jsonData.systemContext
+    const conversation_id = await setContext(
+      appId,
+      userId,
+      conversationId,
+      systemContext
     );
-    return c.json({ status: "success", conversationId });
+    return c.json({ status: "success", conversationId: conversation_id });
   } catch (error) {
+    console.error("Failed to set context:", error);
     return c.json(
       {
         status: "error",
@@ -61,6 +65,27 @@ app.post("/submit", jwtMiddleware, async (c) => {
       {
         status: "error",
         message: "Failed to set context: " + error.message,
+      },
+      500
+    );
+  }
+});
+
+app.post("/process-message", jwtMiddleware, async (c) => {
+  const { message } = await c.req.json();
+
+  try {
+    await sendCeleryMessage("celery", {
+      task: "celery_config.process_message",
+      args: [message],
+      kwargs: {},
+    });
+    return c.json({ status: "success", message: "Message sent to Celery" });
+  } catch (error) {
+    return c.json(
+      {
+        status: "error",
+        message: "Failed to send message to Celery: " + error.message,
       },
       500
     );
