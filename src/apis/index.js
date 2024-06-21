@@ -1,8 +1,6 @@
 import { Hono } from "hono";
 import { readFile } from "fs/promises";
 import { uploadFileAndPrepMessage } from "./services/submissionService";
-import { sendMessage } from "./services/rabbitMQService";
-// import { setContext } from "./services/lagoService";
 import { setContext } from "./services/contextService";
 import { jwtMiddleware, generateToken } from "./middlewares/auth";
 import { hashPassword } from "./utils/utils";
@@ -58,34 +56,17 @@ app.post("/submit", jwtMiddleware, async (c) => {
   try {
     const formData = await c.req.formData();
     const message = await uploadFileAndPrepMessage(formData);
-    sendMessage("inferer-request-queue", message);
+    await sendCeleryMessage("celery", {
+      task: "celery_config.process_message",
+      args: [message],
+      kwargs: {},
+    });
     return c.json({ status: "success", sent: message });
   } catch (error) {
     return c.json(
       {
         status: "error",
         message: "Failed to set context: " + error.message,
-      },
-      500
-    );
-  }
-});
-
-app.post("/process-message", jwtMiddleware, async (c) => {
-  const { message } = await c.req.json();
-
-  try {
-    await sendCeleryMessage("celery", {
-      task: "celery_config.process_message",
-      args: [message],
-      kwargs: {},
-    });
-    return c.json({ status: "success", message: "Message sent to Celery" });
-  } catch (error) {
-    return c.json(
-      {
-        status: "error",
-        message: "Failed to send message to Celery: " + error.message,
       },
       500
     );
