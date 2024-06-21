@@ -1,27 +1,29 @@
-import { existsSync, mkdirSync } from "fs";
-import { writeFile } from "fs/promises";
-import { join } from "path";
+import { Client } from "minio";
+import { v4 as uuidv4 } from "uuid";
+import { config } from "dotenv";
 
-function ensureDirectoryExists(path) {
-  if (!existsSync(path)) {
-    console.log(`Creating new directory at ${path}`);
-    mkdirSync(path, { recursive: true });
-  }
-}
+config();
 
-async function uploadFile(app_id, user_id, conversation_id, file) {
-  const baseDir = process.cwd();
-  const uploadPath = join(baseDir, "uploads", app_id, user_id, conversation_id);
-  ensureDirectoryExists(uploadPath);
+const minioClient = new Client({
+  endPoint: process.env.MINIO_ENDPOINT,
+  port: parseInt(process.env.MINIO_PORT, 10),
+  useSSL: process.env.MINIO_USE_SSL === "true",
+  accessKey: process.env.MINIO_ROOT_USER,
+  secretKey: process.env.MINIO_ROOT_PASSWORD,
+});
 
-  const filename = Date.now() + "-" + file.name;
+async function uploadFileToMinIO(app_id, user_id, conversation_id, file) {
+  const bucketName = process.env.MINIO_BUCKET;
+  const objectName = `${app_id}/${user_id}/${conversation_id}/${uuidv4()}-${
+    file.name
+  }`;
+
   const buffer = await file.arrayBuffer();
-  const filepath = join(uploadPath, filename);
+  const fileStream = Buffer.from(buffer);
 
-  console.log(`Writing file to ${filepath}`);
-  await writeFile(filepath, Buffer.from(buffer));
-  console.log("File upload successful");
-  return filename;
+  await minioClient.putObject(bucketName, objectName, fileStream);
+
+  return objectName;
 }
 
 function validateRequiredFields(fields) {
@@ -60,7 +62,7 @@ async function uploadFileAndPrepMessage(formData) {
 
   if (file) {
     validateFile(file);
-    message.filename = await uploadFile(
+    message.filename = await uploadFileToMinIO(
       message.app_id,
       message.user_id,
       message.conversation_id,
