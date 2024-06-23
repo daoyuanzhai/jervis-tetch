@@ -1,4 +1,3 @@
-// services/contextService.js
 import pool from "../clients/mysqlClient";
 import { v4 as uuidv4 } from "uuid";
 
@@ -20,4 +19,30 @@ export async function setContext(appId, userId, conversationId, systemContext) {
   await pool.execute(query, [appId, userId, conversation_id, systemContext]);
 
   return conversation_id;
+}
+
+export async function getPresetContexts() {
+  const query = `
+    SELECT * FROM chat_context
+    WHERE user_id = 'preset'
+  `;
+
+  const [rows] = await pool.execute(query);
+
+  return rows;
+}
+
+export async function getContextById(id) {
+  const query = `
+    SELECT * FROM chat_context
+    WHERE id = ?
+  `;
+
+  const [rows] = await pool.execute(query, [id]);
+
+  if (rows.length === 0) {
+    throw new Error(`No record found with id: ${id}`);
+  }
+
+  return rows[0];
 }
