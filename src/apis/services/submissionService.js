@@ -51,6 +51,7 @@ async function uploadFileAndPrepMessage(formData) {
     app_id: formData.get("appId"),
     user_id: formData.get("userId"),
     conversation_id: formData.get("conversationId"),
+    voice_model: formData.get("voiceModel"),
   };
   validateRequiredFields(message);
 
@@ -75,4 +76,29 @@ async function uploadFileAndPrepMessage(formData) {
   return message;
 }
 
-export { uploadFileAndPrepMessage };
+async function retrieveTtsFile(filename) {
+  try {
+    const bucketName = process.env.MINIO_BUCKET_TTS;
+    // Get the file
+    const fileStream = await minioClient.getObject(bucketName, filename);
+
+    // Read the file content
+    const chunks = [];
+    for await (const chunk of fileStream) {
+      chunks.push(chunk);
+    }
+    const fileContent = Buffer.concat(chunks);
+
+    // console.log("File content:", fileContent.toString());
+
+    // Remove the file
+    minioClient.removeObject(bucketName, filename);
+    console.log("File removed successfully");
+
+    return fileContent;
+  } catch (error) {
+    console.error("Error handling file:", error);
+  }
+}
+
+export { uploadFileAndPrepMessage, retrieveTtsFile };

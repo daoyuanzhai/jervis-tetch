@@ -1,6 +1,10 @@
 import { Hono } from "hono";
+const path = require("path");
 import { readFile } from "fs/promises";
-import { uploadFileAndPrepMessage } from "./services/submissionService";
+import {
+  uploadFileAndPrepMessage,
+  retrieveTtsFile,
+} from "./services/submissionService";
 import {
   setContext,
   getPresetContexts,
@@ -9,6 +13,7 @@ import {
 import { jwtMiddleware, generateToken } from "./middlewares/auth";
 import { hashPassword } from "./utils/utils";
 import { sendCeleryMessage } from "./services/celeryService";
+import { fetchCharacterList } from "./clients/ttsClient";
 
 const app = new Hono();
 
@@ -155,4 +160,47 @@ app.post("/submit", jwtMiddleware, async (c) => {
   }
 });
 
+app.get("/characters", jwtMiddleware, async (c) => {
+  try {
+    const characters = await fetchCharacterList();
+
+    return c.json(characters);
+  } catch (error) {
+    console.error("Failed to get preset contexts:", error);
+    return c.json(
+      {
+        status: "error",
+        message: "Failed to get characters: " + error.message,
+      },
+      500
+    );
+  }
+});
+
+app.get("/get-tts-file/:filename", async (c) => {
+  const filename = c.req.param("filename");
+  try {
+    const fileContent = await retrieveTtsFile(filename);
+    const mimeType = getMimeType(filename);
+    return c.body(fileContent, 200, { "Content-Type": mimeType });
+  } catch (error) {
+    console.log(error);
+    return c.text("Error retrieving file", 500);
+  }
+});
+
+function getMimeType(filename) {
+  const ext = path.extname(filename).toLowerCase();
+  switch (ext) {
+    case ".mp3":
+      return "audio/mpeg";
+    case ".wav":
+      return "audio/wav";
+    case ".ogg":
+      return "audio/ogg";
+    // Add more cases as needed for different audio formats
+    default:
+      return "application/octet-stream";
+  }
+}
 export default app;

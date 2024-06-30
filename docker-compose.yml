@@ -116,47 +116,15 @@ services:
       - MINIO_ACCESS_KEY=${MINIO_ROOT_USER}
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
       - MINIO_BUCKET=${MINIO_BUCKET}
+      - MINIO_BUCKET_TTS=${MINIO_BUCKET_TTS}
+      - TTS_HOST_URL=${TTS_HOST_URL}
     volumes:
       # - ./api:/app:ro # Bind mount the source code directory (read-only)
       - ./volumes/celery_logs:/var/log/celery # Volume for logs
+      - ./volumes/celery_data:/app/cache
     depends_on:
       - rabbitmq
       - redis
-
-  #   lago:
-  #     image: lago:0.01
-  #     restart: always
-  #     container_name: lago
-  #     hostname: lago-hostname
-  #     ports:
-  #       - 8088:8088
-  #     depends_on:
-  #       - rabbitmq
-  #       - qdrant
-  #       - mysql
-  #       - whisper
-  #     volumes:
-  #       - ./volumes/lago_data:/app/cache
-  #       - shared_volume_lago_jervis:/app/uploads
-  #     environment:
-  #       - RUNNING_ENV=${RUNNING_ENV}
-  #       - USING_PROXY=${USING_PROXY}
-  #       - PROXY_URL=${PROXY_URL}
-  #       - QDRANT_HOST=http://qdrant:6333
-  #       - QDRANT_API_KEY=${QDRANT_API_KEY}
-  #       - LAGO_MYSQL_HOST=mysql
-  #       - LAGO_MYSQL_DB=${LAGO_MYSQL_DB}
-  #       - LAGO_MYSQL_USERNAME=${LAGO_MYSQL_USERNAME}
-  #       - LAGO_MYSQL_PASSWORD=${LAGO_MYSQL_PASSWORD}
-  #       - LAGO_RABBITMQ_HOST=rabbitmq
-  #       - LAGO_RABBITMQ_USER=${LAGO_RABBITMQ_USER}
-  #       - LAGO_RABBITMQ_PASS=${LAGO_RABBITMQ_PASS}
-  #       - OPENAI_API_KEY=${OPENAI_API_KEY}
-  #       - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2}
-  #       - LANGCHAIN_ENDPOINT=${LANGCHAIN_ENDPOINT}
-  #       - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
-  #       - WHISPER_HOST=whisper
-
   jervis:
     build:
       context: ./
@@ -192,7 +160,3 @@ services:
       - qdrant
       - celery
       - mysql
-#     volumes:
-#       - shared_volume_lago_jervis:/usr/src/app/uploads
-# volumes:
-#   shared_volume_lago_jervis:
