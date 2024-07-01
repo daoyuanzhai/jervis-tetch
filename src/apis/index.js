@@ -177,7 +177,7 @@ app.get("/characters", jwtMiddleware, async (c) => {
   }
 });
 
-app.get("/get-tts-file/:filename", async (c) => {
+app.get("/get-tts-file/:filename", jwtMiddleware, async (c) => {
   const filename = c.req.param("filename");
   try {
     const fileContent = await retrieveTtsFile(filename);

@@ -4,3 +4,4 @@ node_modules
 /uploads_local
 /volumes
 credentials.json
+jervis-tetch*.tar
