@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 const path = require("path");
 import { readFile } from "fs/promises";
 import {
@@ -16,6 +17,9 @@ import { sendCeleryMessage } from "./services/celeryService";
 import { fetchCharacterList } from "./clients/ttsClient";
 
 const app = new Hono();
+
+// Enable CORS for all routes
+app.use("*", cors());
 
 app.post("/token", async (c) => {
   const { username, password } = await c.req.json();
@@ -203,4 +207,5 @@ function getMimeType(filename) {
       return "application/octet-stream";
   }
 }
+
 export default app;
